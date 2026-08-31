@@ -1,0 +1,6 @@
+@echo off
+echo Installing web dependencies (if needed)...
+call npm install react-native-web@~0.19.0 react-dom@18.2.0 @expo/metro-runtime --legacy-peer-deps
+echo.
+echo Starting Vedic Math App in Web Browser...
+call npm run web
