@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GameProvider } from './src/context/GameContext';
 import { StyleSheet } from 'react-native';
+import { colors } from './src/theme/theme';
 
 // Screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -12,18 +13,12 @@ import ConceptIntroScreen from './src/screens/ConceptIntroScreen';
 import GuidedPracticeScreen from './src/screens/GuidedPracticeScreen';
 import RigorousPracticeScreen from './src/screens/RigorousPracticeScreen';
 import MasteryLevelScreen from './src/screens/MasteryLevelScreen';
+import BaseMultiplicationScreen from './src/screens/BaseMultiplicationScreen';
 import ProgressScreen from './src/screens/ProgressScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-
-export type RootStackParamList = {
-  Home: undefined;
-  ConceptIntro: { conceptId: string };
-  GuidedPractice: { conceptId: string };
-  RigorousPractice: { conceptId: string };
-  MasteryLevel: { conceptId: string };
-  Progress: undefined;
-  Settings: undefined;
-};
+import ProfileSwitcherScreen from './src/screens/ProfileSwitcherScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
+import { RootStackParamList } from './src/types';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -36,7 +31,7 @@ export default function App() {
             initialRouteName="Home"
             screenOptions={{
               headerStyle: {
-                backgroundColor: '#4F46E5',
+                backgroundColor: colors.primary,
               },
               headerTintColor: '#fff',
               headerTitleStyle: {
@@ -70,6 +65,11 @@ export default function App() {
             options={{ title: 'Mastery Level' }}
           />
           <Stack.Screen 
+            name="BaseMultiplication" 
+            component={BaseMultiplicationScreen}
+            options={{ title: 'Numbers Near a Base' }}
+          />
+          <Stack.Screen 
             name="Progress" 
             component={ProgressScreen}
             options={{ title: 'Your Progress' }}
@@ -78,6 +78,16 @@ export default function App() {
             name="Settings" 
             component={SettingsScreen}
             options={{ title: 'Settings' }}
+          />
+          <Stack.Screen 
+            name="ProfileSwitcher" 
+            component={ProfileSwitcherScreen}
+            options={{ title: 'Profiles' }}
+          />
+          <Stack.Screen 
+            name="Calendar" 
+            component={CalendarScreen}
+            options={{ title: 'Calendar' }}
           />
         </Stack.Navigator>
         <StatusBar style="light" />

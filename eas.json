@@ -15,14 +15,19 @@
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "simulator": true
+      },
       "env": {
         "EAS_SKIP_AUTO_FINGERPRINT": "1"
       }
     },
     "production": {
+      "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
       },
+      "ios": {},
       "env": {
         "EAS_SKIP_AUTO_FINGERPRINT": "1"
       }

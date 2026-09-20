@@ -1,13 +1,15 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { colors, gradients, radii } from '../theme/theme';
 
 type MasteryBarProps = {
   percentage: number;
   showLabel?: boolean;
+  label?: string;
 };
 
-const MasteryBar: React.FC<MasteryBarProps> = ({ percentage, showLabel = true }) => {
+const MasteryBar: React.FC<MasteryBarProps> = ({ percentage, showLabel = true, label = 'Mastery Progress' }) => {
   const animatedWidth = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -23,17 +25,17 @@ const MasteryBar: React.FC<MasteryBarProps> = ({ percentage, showLabel = true })
     outputRange: ['0%', '100%'],
   });
 
-  const getColor = () => {
-    if (percentage < 30) return ['#EF4444', '#DC2626'];
-    if (percentage < 70) return ['#F59E0B', '#D97706'];
-    return ['#10B981', '#059669'];
+  const getColor = (): readonly [string, string] => {
+    if (percentage < 30) return gradients.danger;
+    if (percentage < 70) return gradients.gold;
+    return gradients.success;
   };
 
   return (
     <View style={styles.container}>
       {showLabel && (
         <View style={styles.labelContainer}>
-          <Text style={styles.label}>Mastery Progress</Text>
+          <Text style={styles.label}>{label}</Text>
           <Text style={styles.percentage}>{Math.round(percentage)}%</Text>
         </View>
       )}
@@ -64,18 +66,20 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
   },
   percentage: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4C1D95',
+    color: colors.primary,
   },
   barContainer: {
     height: 20,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 10,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.pill,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   bar: {
     height: '100%',

@@ -1,0 +1,450 @@
+To turn the complete set of **16 Main Sutras** and **13 Sub-Sutras** into interactive educational software features, each method needs a clear mathematical concept, input pattern, step-by-step algorithm, and app feature design.
+
+---
+
+## Part 1: The 16 Main Sutras (Developer Concepts)
+
+### 1. Ekadhikena Purvena (*By one more than the previous one*)
+
+* **Mathematical Concept:** Fast squaring of numbers ending in 5, or multiplying numbers where unit digits sum to 10 and left digits are identical.
+* **Input Pattern:** $N = 10a + 5$ or $X = 10a + b, Y = 10a + c$ where $b + c = 10$.
+* **Algorithm Steps:**
+1. Left Part = $a \times (a + 1)$
+2. Right Part = $5^2 = 25$ (or $b \times c$)
+3. Result = $\text{Concat}(\text{Left Part}, \text{Right Part})$
+
+
+* **Software Feature:** Split-screen input box highlighting $a$ and $(a+1)$ in yellow to show the pre-multiplication before appending $25$.
+
+---
+
+### 2. Nikhilam Navatashcaramam Dashatah (*All from 9 and the last from 10*)
+
+* **Mathematical Concept:** Direct subtraction from base powers of 10 ($10, 100, 1000$), and base-near multiplication.
+* **Input Pattern:** $10^k - N$ where $N < 10^k$.
+* **Algorithm Steps:**
+1. For every digit of $N$ except the rightmost: Digit = $9 - d_i$.
+2. For the last non-zero digit: Digit = $10 - d_{\text{last}}$.
+
+
+* **Software Feature:** "Digit Transformer" mode—kids tap each digit to reveal a floating bubble showing $-9$ or $-10$.
+
+---
+
+### 3. Urdhva-Tiryagbhyam (*Vertically and Crosswise*)
+
+* **Mathematical Concept:** General cross-multiplication for multi-digit numbers without relying on specific bases.
+* **Input Pattern:** Any $n$-digit $\times$ $m$-digit multiplication.
+* **Algorithm Steps (2-Digit $AB \times CD$):**
+1. Unit digit = $B \times D$ (store carry).
+2. Tens digit = $(A \times D) + (B \times C) + \text{carry}$.
+3. Hundreds digit = $(A \times C) + \text{carry}$.
+
+
+* **Software Feature:** Animated vector arrows linking pairs ($↑$, $↗↘$, $↑$) as the user moves from right to left.
+
+---
+
+### 4. Paravartya Yojayet (*Transpose and Apply*)
+
+* **Mathematical Concept:** Division when the divisor is slightly above a power of 10, and synthetic division for polynomials.
+* **Input Pattern:** Division by numbers like $11, 112, 103$.
+* **Algorithm Steps:**
+1. Separate the divisor base (e.g., $112 \rightarrow$ Base 100, excess $+12$).
+2. Transpose (invert signs) of excess digits: $+1, +2 \rightarrow -1, -2$.
+3. Perform multiply-and-add column operations across dividend digits.
+
+
+* **Software Feature:** "Sign Inverter" toggle button that lets kids flip $+2 \rightarrow -2$ in the setup grid.
+
+---
+
+### 5. Shunyam Saamyasamuccaye (*When the sum is the same, that sum is zero*)
+
+* **Mathematical Concept:** Solving algebraic equations where sums of terms or denominators on both sides are equal.
+* **Input Pattern:** Equations like $\frac{1}{x+a} + \frac{1}{x+b} = \frac{1}{x+c} + \frac{1}{x+d}$ where $a+b = c+d$.
+* **Algorithm Steps:**
+1. Calculate $a + b$ and $c + d$.
+2. If $a + b = c + d$, set $2x + a + b = 0$.
+3. $x = -\frac{a + b}{2}$.
+
+
+* **Software Feature:** Dual scale visual balancer that glows green when the left and right parameter sums match.
+
+---
+
+### 6. Anurupye Shunyamanyat (*If one is in ratio, the other one is zero*)
+
+* **Mathematical Concept:** Solving linear simultaneous equations where the ratio of coefficients of one variable matches the ratio of constant terms.
+* **Input Pattern:** $ax + by = c$ and $dx + ey = f$ where $a/d = c/f$.
+* **Algorithm Steps:**
+1. Check if $a/d = c/f$.
+2. If true, set $y = 0$.
+3. Solve $x = c/a$.
+
+
+* **Software Feature:** Ratio auto-checker that dims out the $y$ term when a matching ratio is detected.
+
+---
+
+### 7. Sankalana-Vyavakalanabhyam (*By addition and by subtraction*)
+
+* **Mathematical Concept:** Solving simultaneous equations with swapped coefficients ($ax + by = c$ and $bx + ay = d$).
+* **Input Pattern:** System where $x$-coefficient in Eq 1 equals $y$-coefficient in Eq 2.
+* **Algorithm Steps:**
+1. Add both equations: $(a+b)x + (a+b)y = (c+d) \rightarrow x + y = P$.
+2. Subtract equations: $(a-b)x - (a-b)y = (c-d) \rightarrow x - y = Q$.
+3. Solve simple system $x + y = P$ and $x - y = Q$.
+
+
+* **Software Feature:** "Plus-Minus Sliders" that combine two equations into simpler forms in two interactive steps.
+
+---
+
+### 8. Puranapuranabhyam (*By the completion or non-completion*)
+
+* **Mathematical Concept:** Completing the square or completing whole tens/hundreds to solve quadratic equations or simplify mental additions.
+* **Input Pattern:** Addition like $49 + 28$ or solving $x^2 + 6x = 7$.
+* **Algorithm Steps:**
+1. Identify deficiency to nearest round number ($49 \rightarrow +1 \rightarrow 50$).
+2. Take $1$ from second term ($28 - 1 = 27$).
+3. Compute $50 + 27 = 77$.
+
+
+* **Software Feature:** Interactive "Snap-to-10" block game where kids drag 1 unit from one number block to complete a full 10-block.
+
+---
+
+### 9. Chalana-Kalanabhyam (*Differences and Similarities / Calculus principles*)
+
+* **Mathematical Concept:** Finding roots of quadratic polynomials using differential-like steps.
+* **Input Pattern:** Quadratic equations $ax^2 + bx + c = 0$.
+* **Algorithm Steps:**
+1. Take first derivative/slope form: $2ax + b$.
+2. Evaluate discriminant $\Delta = \sqrt{b^2 - 4ac}$.
+3. Set $2ax + b = \pm \Delta$ and solve for $x$.
+
+
+* **Software Feature:** Slope visualizer showing how the middle term breaks down into symmetric root offsets.
+
+---
+
+### 10. Yaavadunam (*Whatever the extent of its deficiency*)
+
+* **Mathematical Concept:** Fast squaring and cubing of numbers near base power $10, 100, 1000$.
+* **Input Pattern:** $N^2$ where $N$ is near base $B$.
+* **Algorithm Steps:**
+1. Deviation $d = N - B$.
+2. Left Part = $N + d$.
+3. Right Part = $d^2$.
+4. Result = $\text{Concat}(\text{Left Part}, \text{Right Part})$.
+
+
+* **Software Feature:** "Deviation Gauge" widget showing a needle pointing to $+d$ or $-d$ from base $100$.
+
+---
+
+### 11. Vyashtisamanstih (*Part and Whole*)
+
+* **Mathematical Concept:** Solving complex algebraic or factor problems by treating individual variables or sub-expressions independently before combining.
+* **Input Pattern:** Cyclic cubic polynomials or equations like $(x+1)(x+2)(x+3)(x+4) = k$.
+* **Algorithm Steps:**
+1. Group symmetrically: $y = (x+1)(x+4) = x^2 + 5x + 4$.
+2. Substitute $y$ into the remaining pair.
+3. Solve simplified quadratic in $y$, then back-substitute $x$.
+
+
+* **Software Feature:** "Grouping Lasso" allowing kids to encircle matching terms to substitute them with a single variable block.
+
+---
+
+### 12. Shesanyankena Charamena (*The remainders by the last digit*)
+
+* **Mathematical Concept:** Converting fractions with prime denominators (like $1/7, 1/13, 1/19$) into recurring decimals.
+* **Input Pattern:** $1/D$ where $D$ ends in $9$ or is a prime like $7$.
+* **Algorithm Steps:**
+1. Multiply remainders systematically by the end-digit modifier.
+2. Generate decimal digits sequentially without full long division.
+
+
+* **Software Feature:** Circular decimal generator wheel that fills in digits as kids spin the remainder dial.
+
+---
+
+### 13. Sopantyadvayamantyam (*The ultimate and twice the penultimate*)
+
+* **Mathematical Concept:** Solving specialized fractional linear equations.
+* **Input Pattern:** $\frac{1}{(x+a)(x+b)} + \frac{1}{(x+a)(x+c)} = \frac{1}{(x+b)(x+c)}$.
+* **Algorithm Steps:**
+1. Check condition where last terms $b, c$ and penultimate term $a$ satisfy structural equality.
+2. Set $x = -\frac{2a + b + c}{3}$ (or exact formula variant).
+
+
+* **Software Feature:** Pattern-match overlay that highlights parameter positions in blue, orange, and purple.
+
+---
+
+### 14. Ekanyunena Purvena (*By one less than the previous one*)
+
+* **Mathematical Concept:** Multiplying any number by a multiplier consisting entirely of 9s ($99, 999, 9999$).
+* **Input Pattern:** $A \times 99..9$.
+* **Algorithm Steps:**
+1. Left Part = $A - 1$.
+2. Right Part = Apply *Nikhilam* to $A$ (subtract digits from 9 and last from 10).
+3. Result = $\text{Concat}(\text{Left Part}, \text{Right Part})$.
+
+
+* **Software Feature:** Dual input box where Left Box auto-decrements by 1 and Right Box prompts Nikhilam complements.
+
+---
+
+### 15. Gunitasamuccayah (*The product of the sum is equal to the sum of the product*)
+
+* **Mathematical Concept:** Verification tool for algebraic multiplication and factorizations using digit sums/coefficients.
+* **Input Pattern:** Checking if $(x + 2)(x + 3) = x^2 + 5x + 6$.
+* **Algorithm Steps:**
+1. Set $x = 1$.
+2. Sum of LHS factors $= (1+2)(1+3) = 12$.
+3. Sum of RHS coefficients $= 1 + 5 + 6 = 12$.
+4. If LHS = RHS, factorization is verified.
+
+
+* **Software Feature:** "Checkmark Validator" button where kids substitute $x=1$ to test if their factored answer is correct.
+
+---
+
+### 16. Gunakasamuccayah (*The factor of the sum is equal to the sum of the factor*)
+
+* **Mathematical Concept:** Verification technique for polynomial factor evaluation and quadratic root checks.
+* **Input Pattern:** Verification of higher-order polynomial terms.
+* **Algorithm Steps:**
+1. Evaluate sum of coefficients of factors.
+2. Compare against product coefficient sum.
+
+
+* **Software Feature:** Self-correction audit log in the UI showing step-by-step coefficient totals.
+
+---
+
+## Part 2: The 13 Sub-Sutras (Developer Concepts)
+
+### 1. Anurupyena (*Proportionately*)
+
+* **Mathematical Concept:** Scaling non-10 bases (e.g., base 50, 200, 300) to standard base multiplication.
+* **Input Pattern:** $48 \times 46$ (near base 50 $= 100 / 2$).
+* **Algorithm Steps:**
+1. Base $B = 50$, Working Base ratio $m = 1/2$.
+2. Deviations $d_1 = -2, d_2 = -4$.
+3. Cross result $= 48 + (-4) = 44$.
+4. Scale Left Part $= 44 \times (1/2) = 22$.
+5. Right Part $= (-2) \times (-4) = 08$.
+6. Result = $2208$.
+
+
+* **Software Feature:** Base scaling factor slider ($1/2$, $\times 2$, $\times 3$) that adjusts intermediate values dynamically.
+
+---
+
+### 2. Shishyate Sheshasamjnah (*The remainder remains constant*)
+
+* **Mathematical Concept:** Finding remainder when a polynomial is divided by a linear binominal $(x - a)$.
+* **Input Pattern:** Polynomial $P(x)$ divided by $(x - a)$.
+* **Algorithm Steps:**
+1. Set divisor $= 0 \rightarrow x = a$.
+2. Evaluate $P(a)$.
+3. Remainder $= P(a)$.
+
+
+* **Software Feature:** "Plug-in Machine" UI where kids drop $a$ into an animated funnel to output the remainder.
+
+---
+
+### 3. Adyamadyenantyamantyena (*First by first and last by last*)
+
+* **Mathematical Concept:** Quick check/first-step evaluation for quadratic factoring and multiplication.
+* **Input Pattern:** $(ax + b)(cx + d) = Px^2 + Qx + R$.
+* **Algorithm Steps:**
+1. $P = a \times c$ (first by first).
+2. $R = b \times d$ (last by last).
+
+
+* **Software Feature:** Highlight first digits green and last digits purple to immediately populate boundary terms of quadratic templates (`[  ]x² + [  ]x + [  ]`).
+
+---
+
+### 4. Kevalaih Saptakam Gunyat (*For 7 the multiplicand is 143*)
+
+* **Mathematical Concept:** Specific shortcut for division and recurring decimal calculation by 7.
+* **Input Pattern:** $N / 7$.
+* **Algorithm Steps:**
+1. Use multiplier sequence $142857$ (derived from $143 \times 7 = 1001$).
+2. Cycle the 6-digit sequence based on starting remainder.
+
+
+* **Software Feature:** Interactive 6-node circular graph ($1 \rightarrow 4 \rightarrow 2 \rightarrow 8 \rightarrow 5 \rightarrow 7$) that lights up based on remainder.
+
+---
+
+### 5. Vestanam (*By osculation*)
+
+* **Mathematical Concept:** Divisibility testing for prime numbers ($7, 13, 17, 19, 23, 29, 31$).
+* **Input Pattern:** Test if $N$ is divisible by prime $P$.
+* **Algorithm Steps:**
+1. Find osculator $k$ for prime (e.g., for $19$, $k = 2$; for $13$, $k = 4$).
+2. Multiply last digit by $k$ and add/subtract from remaining truncated number.
+3. Repeat until number is small enough to verify.
+
+
+* **Software Feature:** "Number Truncator & Multiplier" loop card that animates dropping the last digit and adding $k \times \text{digit}$.
+
+---
+
+### 6. Yavadunam Tavadunam (*Lessen by the deficiency*)
+
+* **Mathematical Concept:** Sub-sutra variant for fast subtraction of deficiency before squaring numbers below base.
+* **Input Pattern:** $94^2$ (base 100, deficiency 6).
+* **Algorithm Steps:**
+1. Deduct deficiency further: $94 - 6 = 88$.
+2. Append square of deficiency: $6^2 = 36$.
+3. Result = $8836$.
+
+
+* **Software Feature:** Two-step guided input: Step 1 (Subtract deficiency), Step 2 (Append $d^2$).
+
+---
+
+### 7. Yavadunam Tavadunikritya Varganca Yojayet (*Whatever the deficiency, lessen by that amount and setup the square*)
+
+* **Mathematical Concept:** Full algorithmic definition combining deficiency reduction and square placement for bases $10^k$.
+* **Input Pattern:** $(10^k - d)^2$.
+* **Algorithm Steps:**
+1. Left Part = $(10^k - d) - d = 10^k - 2d$.
+2. Right Part = $d^2$ padded to $k$ digits with leading zeros.
+3. Result = $\text{Concat}(\text{Left Part}, \text{Right Part})$.
+
+
+* **Software Feature:** Zero-padding visual slots that force kids to pad $d^2$ with necessary zeros based on base count (e.g., 2 zeros for base 100).
+
+---
+
+### 8. Antyayor Dashakepi (*Last digits sum to 10*)
+
+* **Mathematical Concept:** Multiplication shortcut when unit digits sum to 10 and remaining prefix digits are identical.
+* **Input Pattern:** $43 \times 47$ ($3+7=10$, prefix $4=4$).
+* **Algorithm Steps:**
+1. Left Part = $4 \times (4 + 1) = 20$.
+2. Right Part = $3 \times 7 = 21$.
+3. Result = $2021$.
+
+
+* **Software Feature:** Color-match detector that glows green when unit digits add up to $10$.
+
+---
+
+### 9. Antyayoreva (*Only the last terms*)
+
+* **Mathematical Concept:** Evaluating constants or specific end-terms in complex polynomial expansions or partial fractions.
+* **Input Pattern:** Finding constant term in $(x+a)(x+b)(x+c)$.
+* **Algorithm Steps:**
+1. Ignore $x$ terms.
+2. Compute $a \times b \times c$.
+
+
+* **Software Feature:** "Focus Lens" tool that dims all $x$ variables, leaving only constant terms visible.
+
+---
+
+### 10. Samuccayagunitah (*The sum of coefficients in the product*)
+
+* **Mathematical Concept:** Verifying polynomial products by multiplying individual coefficient sums.
+* **Input Pattern:** Check $P(x) \cdot Q(x) = R(x)$.
+* **Algorithm Steps:**
+1. $S_P = \sum \text{coefficients of } P$.
+2. $S_Q = \sum \text{coefficients of } Q$.
+3. Check if $S_P \times S_Q = \sum \text{coefficients of } R$.
+
+
+* **Software Feature:** Summary pill tags showing coefficient sums under each polynomial factor.
+
+---
+
+### 11. Lopanasthapanabhyam (*By elimination and retention*)
+
+* **Mathematical Concept:** Factorizing multi-variable quadratic expressions by temporarily setting one variable to zero.
+* **Input Pattern:** $2x^2 + 5xy + 2y^2 + 4x + 5y + 2$.
+* **Algorithm Steps:**
+1. Set $y = 0 \rightarrow 2x^2 + 4x + 2 = 2(x+1)^2$.
+2. Set $x = 0 \rightarrow 2y^2 + 5y + 2 = (2y+1)(y+2)$.
+3. Combine non-zero factor components to assemble full factorization.
+
+
+* **Software Feature:** "Hide Variable" switch ($y=0$) that temporarily grays out all $y$ terms on canvas.
+
+---
+
+### 12. Vilokanam (*By mere observation*)
+
+* **Mathematical Concept:** Solving simple equations or finding square/cube roots instantly using visual pattern recognition.
+* **Input Pattern:** $\sqrt{2025}$, $\sqrt[3]{91125}$, or $x + 5 = 12$.
+* **Algorithm Steps:**
+1. Look at last digit ($5 \rightarrow$ root ends in $5$).
+2. Look at remaining group ($20 \rightarrow 4^2 < 20 < 5^2 \rightarrow$ tens digit is $4$).
+3. Result = $45$.
+
+
+* **Software Feature:** "Flash Card / Instant Answer" game mode with a timer rewarding answer speed without written steps.
+
+---
+
+### 13. Gunitasamuccayah Samuccayagunitah (*Product of sums equals sum of products*)
+
+* **Mathematical Concept:** Extended verification rule combining coefficient sums across multi-variable algebraic expressions.
+* **Input Pattern:** Factoring multi-variable polynomials.
+* **Algorithm Steps:**
+1. Calculate sum of terms for factors.
+2. Calculate sum of terms for product.
+3. Verify equality.
+
+
+* **Software Feature:** Final double-check audit screen before awarding quest points in game practice modes.
+
+---
+
+## Suggested App Architecture & Data Model
+
+```json
+{
+  "sutra_id": "sub_sutra_8",
+  "sutra_name": "Antyayor Dashakepi",
+  "translation": "Last digits sum to 10",
+  "pattern_matcher": {
+    "type": "multiplication",
+    "constraints": [
+      "first_digits_equal(A, B)",
+      "sum_units_equals_10(A, B)"
+    ]
+  },
+  "generator_params": {
+    "tens_range": [1, 9],
+    "units_pair": [[1,9], [2,8], [3,7], [4,6], [5,5]]
+  },
+  "steps": [
+    {
+      "step_index": 1,
+      "instruction": "Multiply tens digit by (tens digit + 1)",
+      "formula": "A.tens * (A.tens + 1)"
+    },
+    {
+      "step_index": 2,
+      "instruction": "Multiply unit digits together",
+      "formula": "A.units * B.units"
+    },
+    {
+      "step_index": 3,
+      "instruction": "Concatenate step 1 and step 2 results",
+      "formula": "concat(step1, step2)"
+    }
+  ]
+}
+
+```

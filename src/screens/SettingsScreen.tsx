@@ -1,70 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch, Alert, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React from 'react';
+import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types';
 import { useGame } from '../context/GameContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colors, gradients, radii, shadow, spacing } from '../theme/theme';
 
 type SettingsScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>;
+  navigation: StackNavigationProp<RootStackParamList, 'Settings'>;
 };
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-  const { userProgress, concepts, resetGameState } = useGame();
-  const [cloudSyncEnabled, setCloudSyncEnabled] = useState(false);
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
-
-  // Load cloud sync preference
-  React.useEffect(() => {
-    loadSyncPreference();
-  }, []);
-
-  const loadSyncPreference = async () => {
-    try {
-      const preference = await AsyncStorage.getItem('cloudSyncEnabled');
-      if (preference !== null) {
-        setCloudSyncEnabled(preference === 'true');
-      }
-    } catch (error) {
-      console.error('Error loading sync preference:', error);
-    }
-  };
-
-  const toggleCloudSync = async (value: boolean) => {
-    try {
-      // Save preference
-      await AsyncStorage.setItem('cloudSyncEnabled', value.toString());
-      setCloudSyncEnabled(value);
-
-      if (value) {
-        // Enable cloud sync
-        Alert.alert(
-          '☁️ Cloud Sync Enabled',
-          'Your progress will now be synced to the cloud. Sign in to access your progress from any device.',
-          [
-            {
-              text: 'Sign In',
-              onPress: () => {
-                // TODO: Implement sign in
-                Alert.alert('Coming Soon', 'Cloud authentication will be available soon!');
-              }
-            },
-            { text: 'Later' }
-          ]
-        );
-      } else {
-        // Disable cloud sync
-        Alert.alert(
-          '📱 Local Storage Only',
-          'Your progress will only be saved on this device.'
-        );
-      }
-    } catch (error) {
-      console.error('Error toggling cloud sync:', error);
-      Alert.alert('Error', 'Failed to update sync preference');
-    }
-  };
+  const { userProgress, concepts, resetActiveProfileProgress } = useGame();
 
   const handleResetProgress = () => {
     Alert.alert(
@@ -80,8 +27,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['userProgress', 'concepts']);
-              resetGameState();
+              await resetActiveProfileProgress();
               Alert.alert('✅ Reset Complete', 'All progress has been cleared.');
               navigation.navigate('Home');
             } catch (error) {
@@ -89,61 +35,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             }
           }
         }
-      ]
-    );
-  };
-
-  const handleExportProgress = async () => {
-    try {
-      const exportData = {
-        userProgress,
-        concepts,
-        exportDate: new Date().toISOString(),
-        version: '1.0.0'
-      };
-
-      const jsonString = JSON.stringify(exportData, null, 2);
-      
-      Alert.alert(
-        '📤 Export Progress',
-        `Your progress has been prepared for export.\n\nData size: ${(jsonString.length / 1024).toFixed(2)} KB`,
-        [
-          {
-            text: 'Copy to Clipboard',
-            onPress: () => {
-              // In a real app, use Clipboard API
-              Alert.alert('✅ Copied', 'Progress data copied to clipboard');
-            }
-          },
-          {
-            text: 'Share',
-            onPress: () => {
-              // In a real app, use expo-sharing
-              Alert.alert('Coming Soon', 'File sharing will be available soon!');
-            }
-          },
-          { text: 'Cancel', style: 'cancel' }
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to export progress');
-    }
-  };
-
-  const handleImportProgress = () => {
-    Alert.alert(
-      '📥 Import Progress',
-      'Import progress from a backup file or another device.',
-      [
-        {
-          text: 'From File',
-          onPress: () => Alert.alert('Coming Soon', 'File import will be available soon!')
-        },
-        {
-          text: 'From Cloud',
-          onPress: () => Alert.alert('Coming Soon', 'Cloud import will be available soon!')
-        },
-        { text: 'Cancel', style: 'cancel' }
       ]
     );
   };
@@ -156,7 +47,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         showsVerticalScrollIndicator={true}
       >
       <LinearGradient
-        colors={['#4C1D95', '#5B21B6']}
+        colors={gradients.header}
         style={styles.header}
       >
         <Text style={styles.title}>⚙️ Settings</Text>
@@ -164,80 +55,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       </LinearGradient>
 
       <View style={styles.content}>
-        {/* Cloud Sync Section */}
+        {/* Profiles Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>☁️ Storage & Sync</Text>
-          
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Cloud Sync</Text>
-              <Text style={styles.settingDescription}>
-                {cloudSyncEnabled 
-                  ? 'Progress synced to cloud' 
-                  : 'Progress saved locally only'}
+          <Text style={styles.sectionTitle}>👤 Learner Profiles</Text>
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ProfileSwitcher')}>
+            <Text style={styles.actionButtonIcon}>👥</Text>
+            <View style={styles.actionButtonContent}>
+              <Text style={styles.actionButtonTitle}>Manage Profiles</Text>
+              <Text style={styles.actionButtonDescription}>
+                Add, switch, or remove learner profiles
               </Text>
             </View>
-            <Switch
-              value={cloudSyncEnabled}
-              onValueChange={toggleCloudSync}
-              trackColor={{ false: '#D1D5DB', true: '#10B981' }}
-              thumbColor={cloudSyncEnabled ? '#fff' : '#f4f3f4'}
-            />
-          </View>
-
-          {cloudSyncEnabled && (
-            <>
-              <View style={styles.settingRow}>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Auto Sync</Text>
-                  <Text style={styles.settingDescription}>
-                    Sync automatically when connected
-                  </Text>
-                </View>
-                <Switch
-                  value={autoSyncEnabled}
-                  onValueChange={setAutoSyncEnabled}
-                  trackColor={{ false: '#D1D5DB', true: '#10B981' }}
-                  thumbColor={autoSyncEnabled ? '#fff' : '#f4f3f4'}
-                />
-              </View>
-
-              <View style={styles.infoBox}>
-                <Text style={styles.infoText}>
-                  ℹ️ Cloud sync requires an account. Your data is encrypted and secure.
-                </Text>
-              </View>
-
-              <TouchableOpacity style={styles.syncButton}>
-                <Text style={styles.syncButtonText}>🔄 Sync Now</Text>
-              </TouchableOpacity>
-            </>
-          )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Calendar')}>
+            <Text style={styles.actionButtonIcon}>📅</Text>
+            <View style={styles.actionButtonContent}>
+              <Text style={styles.actionButtonTitle}>Practice Calendar</Text>
+              <Text style={styles.actionButtonDescription}>
+                View daily time spent practicing
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Data Management Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>💾 Data Management</Text>
-
-          <TouchableOpacity style={styles.actionButton} onPress={handleExportProgress}>
-            <Text style={styles.actionButtonIcon}>📤</Text>
-            <View style={styles.actionButtonContent}>
-              <Text style={styles.actionButtonTitle}>Export Progress</Text>
-              <Text style={styles.actionButtonDescription}>
-                Save a backup of your progress
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={handleImportProgress}>
-            <Text style={styles.actionButtonIcon}>📥</Text>
-            <View style={styles.actionButtonContent}>
-              <Text style={styles.actionButtonTitle}>Import Progress</Text>
-              <Text style={styles.actionButtonDescription}>
-                Restore from a backup file
-              </Text>
-            </View>
-          </TouchableOpacity>
 
           <TouchableOpacity 
             style={[styles.actionButton, styles.dangerButton]} 
@@ -263,7 +106,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Storage Type:</Text>
               <Text style={styles.infoValue}>
-                {cloudSyncEnabled ? '☁️ Cloud + Local' : '📱 Local Only'}
+                📱 Local Only
               </Text>
             </View>
             <View style={styles.infoRow}>
@@ -313,10 +156,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     ...Platform.select({
       web: {
-        maxHeight: '100vh',
+        maxHeight: '100vh' as any,
       },
     }),
   },
@@ -327,21 +170,21 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    padding: 30,
-    paddingTop: 20,
+    padding: spacing.xxl,
+    paddingTop: spacing.xl,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.textInverse,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#E9D5FF',
+    color: colors.goldSurface,
   },
   content: {
-    padding: 20,
+    padding: spacing.xl,
   },
   section: {
     marginBottom: 30,
@@ -349,22 +192,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textPrimary,
     marginBottom: 15,
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow.card,
   },
   settingInfo: {
     flex: 1,
@@ -373,49 +212,45 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   settingDescription: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   infoBox: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.surfaceAlt,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     marginTop: 10,
     marginBottom: 15,
   },
   infoText: {
     fontSize: 13,
-    color: '#4C1D95',
+    color: colors.primary,
     lineHeight: 18,
   },
   syncButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: colors.success,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
     marginTop: 10,
   },
   syncButtonText: {
-    color: '#fff',
+    color: colors.textInverse,
     fontSize: 16,
     fontWeight: 'bold',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow.card,
   },
   actionButtonIcon: {
     fontSize: 32,
@@ -427,45 +262,41 @@ const styles = StyleSheet.create({
   actionButtonTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   actionButtonDescription: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   dangerButton: {
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: colors.errorSurface,
   },
   dangerText: {
-    color: '#DC2626',
+    color: colors.error,
   },
   infoCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    borderRadius: radii.md,
+    ...shadow.card,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.surfaceMuted,
   },
   infoLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   infoValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textPrimary,
   },
   footer: {
     alignItems: 'center',
@@ -473,7 +304,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: colors.textMuted,
   },
 });
 

@@ -73,9 +73,17 @@ const generateSquareQuestion = (n: number, difficulty: string): Question => {
 
 // Generate fresh questions dynamically
 export const generateDynamicQuestions = (conceptId: string, count: number, difficulty?: string): Question[] => {
+  if (conceptId === 'intro-mental-math') {
+    return generateIntroQuestions(count, difficulty);
+  }
+  if (conceptId === 'nikhilam-multiplication') {
+    return generateNikhilamQuestions(count, difficulty);
+  }
+  if (conceptId === 'urdhva-tiryak') {
+    return generateUrdhvaQuestions(count, difficulty);
+  }
   if (conceptId !== 'ekadhikena-purvena') {
-    // Fall back to random questions for other concepts
-    return getRandomQuestions(conceptId, count, difficulty);
+    return generateGeneralQuestions(conceptId, count, difficulty);
   }
   
   const questions: Question[] = [];
@@ -133,5 +141,133 @@ export const generateDynamicQuestions = (conceptId: string, count: number, diffi
     }
   }
   
+  return questions;
+};
+
+const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+const uniqueId = () => `gen_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const difficultyRanges: Record<string, [number, number]> = {
+  easy: [1, 2],
+  medium: [2, 3],
+  hard: [3, 4],
+  expert: [4, 5],
+};
+
+const pickDifficulty = (difficulty?: string): 'easy' | 'medium' | 'hard' | 'expert' => {
+  if (difficulty) return difficulty as 'easy' | 'medium' | 'hard' | 'expert';
+  const levels = ['easy', 'medium', 'hard', 'expert'] as const;
+  return levels[randomInt(0, levels.length - 1)];
+};
+
+/** Level 1: quick mental addition/subtraction using round-number shortcuts. */
+const generateIntroQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [minDigits, maxDigits] = difficultyRanges[questionDifficulty] || [1, 2];
+    const base = randomInt(Math.pow(10, minDigits), Math.pow(10, maxDigits) - 1);
+    const roundBase = Math.round(base / 10) * 10;
+    const addend = randomInt(10, 90);
+    const isAddition = Math.random() > 0.5;
+    const a = roundBase - 1;
+    const answer = isAddition ? a + addend : a - addend;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'intro-mental-math',
+      question: isAddition ? `${a} + ${addend}` : `${a} - ${addend}`,
+      answer,
+      difficulty: questionDifficulty,
+      hint: isAddition
+        ? `Round ${a} up to ${a + 1}, add, then subtract 1`
+        : `Round ${a} up to ${a + 1}, subtract, then add 1 back`,
+    });
+  }
+  return questions;
+};
+
+/** Level 3: Nikhilam multiplication of numbers close to a base (10/100/1000). */
+const generateNikhilamQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const base = questionDifficulty === 'easy' || questionDifficulty === 'medium' ? 100 : 1000;
+    const maxDeviation = questionDifficulty === 'easy' ? 5 : questionDifficulty === 'medium' ? 10 : 20;
+    const dev1 = randomInt(1, maxDeviation);
+    const dev2 = randomInt(1, maxDeviation);
+    const a = base - dev1;
+    const b = base - dev2;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'nikhilam-multiplication',
+      question: `${a} × ${b}`,
+      answer: a * b,
+      difficulty: questionDifficulty,
+      hint: `Base ${base}, deviations -${dev1} and -${dev2}: cross-subtract, then multiply deviations`,
+    });
+  }
+  return questions;
+};
+
+/** Level 4: Urdhva-Tiryagbhyam general multiplication. */
+const generateUrdhvaQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const digits = questionDifficulty === 'easy' ? 1 : questionDifficulty === 'medium' ? 2 : questionDifficulty === 'hard' ? 2 : 3;
+    const min = Math.pow(10, digits - 1) || 1;
+    const max = Math.pow(10, digits) - 1;
+    const a = randomInt(Math.max(min, 10), max);
+    const b = randomInt(Math.max(min, 10), max);
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'urdhva-tiryak',
+      question: `${a} × ${b}`,
+      answer: a * b,
+      difficulty: questionDifficulty,
+      hint: 'Multiply vertically and crosswise, then combine with carries',
+    });
+  }
+  return questions;
+};
+
+/** Give every catalog lesson an owned practice set until it has a specialist generator. */
+const generateGeneralQuestions = (conceptId: string, count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = difficultyRanges[questionDifficulty] || [1, 2];
+    const first = randomInt(Math.pow(10, min - 1), Math.pow(10, max) - 1);
+    const second = randomInt(Math.pow(10, min - 1), Math.pow(10, max) - 1);
+    const operation = i % 3;
+    let question: string;
+    let answer: number;
+
+    if (operation === 0) {
+      question = `${first} + ${second}`;
+      answer = first + second;
+    } else if (operation === 1) {
+      const larger = Math.max(first, second);
+      const smaller = Math.min(first, second);
+      question = `${larger} - ${smaller}`;
+      answer = larger - smaller;
+    } else {
+      const multiplier = randomInt(2, 9);
+      question = `${first} × ${multiplier}`;
+      answer = first * multiplier;
+    }
+
+    questions.push({
+      id: uniqueId(),
+      conceptId,
+      question,
+      answer,
+      difficulty: questionDifficulty,
+      hint: 'Estimate first, then choose the simplest method and verify your answer.',
+    });
+  }
   return questions;
 };

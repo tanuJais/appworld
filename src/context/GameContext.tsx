@@ -1,12 +1,21 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserProgress, GameState, DifficultyLevel, Concept } from '../types';
-import { concepts as initialConcepts } from '../data/concepts';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { UserProgress, GameState, DifficultyLevel, Concept, UserProfile, LastActivity, CalendarEntry } from '../types';
+import * as profileService from '../services/profileService';
+import * as db from '../services/database';
+import { gurukulAvatars } from '../theme/theme';
+
+type PracticeMode = 'guided' | 'rigorous' | 'mastery';
 
 type GameContextType = {
   userProgress: UserProgress;
   gameState: GameState;
   concepts: Concept[];
+  profiles: UserProfile[];
+  activeProfileId: string | null;
+  lastActivity: LastActivity | null;
+  isLoading: boolean;
+  todayMinutes: number;
+
   updateMastery: (conceptId: string, change: number) => void;
   recordAnswer: (conceptId: string, isCorrect: boolean) => void;
   adjustDifficulty: (accuracy: number) => void;
@@ -16,9 +25,25 @@ type GameContextType = {
   unlockNextConcept: (conceptId: string) => void;
   completeGuidedPractice: (conceptId: string) => void;
   completeRigorousPractice: (conceptId: string) => void;
+  markVideoWatched: (conceptId: string) => void;
+
+  // Multi-profile
+  switchProfile: (profileId: string) => Promise<void>;
+  addProfile: (name: string, avatar?: string) => Promise<void>;
+  renameProfile: (profileId: string, name: string) => Promise<void>;
+  removeProfile: (profileId: string) => Promise<void>;
+  resetActiveProfileProgress: () => Promise<void>;
+
+  // Session & calendar tracking
+  startSession: (conceptId: string, mode: PracticeMode) => void;
+  endSession: (conceptId: string, mode: PracticeMode, questionsAttempted: number, correctCount: number) => Promise<void>;
+  recordActivity: (conceptId: string, mode: LastActivity['mode'], questionIndex: number) => void;
+  getCalendarEntries: (startDate: string, endDate: string) => Promise<CalendarEntry[]>;
 };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
+
+const todayKey = () => new Date().toISOString().slice(0, 10);
 
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userProgress, setUserProgress] = useState<UserProgress>({
@@ -37,51 +62,81 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionTotal: 0,
   });
 
-  const [concepts, setConcepts] = useState<Concept[]>(initialConcepts);
+  const [concepts, setConcepts] = useState<Concept[]>([]);
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const [lastActivity, setLastActivityState] = useState<LastActivity | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [todayMinutes, setTodayMinutes] = useState(0);
 
-  // Load data from storage on mount
+  const sessionStartRef = useRef<number | null>(null);
+
   useEffect(() => {
-    loadData();
+    db.initDatabase();
+    loadForActiveProfile();
   }, []);
 
-  // Save data whenever it changes
-  useEffect(() => {
-    saveData();
-  }, [userProgress, concepts]);
-
-  const loadData = async () => {
+  const loadForActiveProfile = async () => {
+    setIsLoading(true);
     try {
-      const progressData = await AsyncStorage.getItem('userProgress');
-      const conceptsData = await AsyncStorage.getItem('concepts');
-      
-      if (progressData) {
-        setUserProgress(JSON.parse(progressData));
-      }
-      if (conceptsData) {
-        setConcepts(JSON.parse(conceptsData));
-      }
+      const profileId = await profileService.getActiveProfileId();
+      const allProfiles = await profileService.getProfiles();
+      const [loadedConcepts, loadedActivity, todayEntry] = await Promise.all([
+        profileService.getTopicProgress(profileId),
+        profileService.getLastActivity(profileId),
+        db.getCalendarEntry(profileId, todayKey()),
+      ]);
+
+      setProfiles(allProfiles);
+      setActiveProfileId(profileId);
+      setConcepts(loadedConcepts);
+      setLastActivityState(loadedActivity);
+      setTodayMinutes(todayEntry?.totalMinutes ?? 0);
+
+      const conceptProgress: UserProgress['concepts'] = {};
+      loadedConcepts.filter(c => c.kind === 'lesson').forEach(c => {
+        conceptProgress[c.id] = {
+          conceptId: c.id,
+          totalAttempts: 0,
+          correctAttempts: 0,
+          accuracy: c.confidenceScore,
+          timeSpent: 0,
+          guidedPracticeCompleted: c.guidedPracticeCompleted,
+          rigorousPracticeCompleted: c.rigorousPracticeCompleted,
+          lastAttempt: new Date(),
+        };
+      });
+      setUserProgress(prev => ({ ...prev, concepts: conceptProgress }));
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading profile data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const saveData = async () => {
-    try {
-      await AsyncStorage.setItem('userProgress', JSON.stringify(userProgress));
-      await AsyncStorage.setItem('concepts', JSON.stringify(concepts));
-    } catch (error) {
-      console.error('Error saving data:', error);
-    }
+  const persistConcepts = useCallback((updated: Concept[]) => {
+    if (!activeProfileId) return;
+    profileService.saveTopicProgress(activeProfileId, updated);
+  }, [activeProfileId]);
+
+  const updateConcept = (conceptId: string, updates: Partial<Concept>) => {
+    setConcepts(prev => {
+      const updated = prev.map(c => (c.id === conceptId ? { ...c, ...updates } : c));
+      persistConcepts(updated);
+      return updated;
+    });
   };
 
   const updateMastery = (conceptId: string, change: number) => {
-    setConcepts(prev => prev.map(concept => {
-      if (concept.id === conceptId) {
+    setConcepts(prev => {
+      const updated = prev.map(concept => {
+        if (concept.id !== conceptId) return concept;
         const newMastery = Math.max(0, Math.min(100, concept.masteryPercentage + change));
         return { ...concept, masteryPercentage: newMastery };
-      }
-      return concept;
-    }));
+      });
+      persistConcepts(updated);
+      return updated;
+    });
   };
 
   const recordAnswer = (conceptId: string, isCorrect: boolean) => {
@@ -97,10 +152,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserProgress(prev => {
       const conceptProgress = prev.concepts[conceptId] || {
         conceptId,
-        masteryPercentage: 0,
-        accuracy: 0,
         totalAttempts: 0,
         correctAttempts: 0,
+        accuracy: 0,
         timeSpent: 0,
         guidedPracticeCompleted: false,
         rigorousPracticeCompleted: false,
@@ -125,11 +179,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       };
     });
+
+    // Confidence score is a rolling measure of practice accuracy per topic
+    setConcepts(prev => {
+      const updated = prev.map(c => {
+        if (c.id !== conceptId) return c;
+        const delta = isCorrect ? 2 : -3;
+        return { ...c, confidenceScore: Math.max(0, Math.min(100, c.confidenceScore + delta)) };
+      });
+      persistConcepts(updated);
+      return updated;
+    });
   };
 
   const adjustDifficulty = (accuracy: number) => {
     setGameState(prev => {
-      let newDifficulty: DifficultyLevel = prev.currentDifficulty;
+      let newDifficulty: GameState['currentDifficulty'] = prev.currentDifficulty;
 
       if (accuracy > 90) {
         if (prev.currentDifficulty === 'easy') newDifficulty = 'medium';
@@ -171,29 +236,107 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const unlockNextConcept = (currentConceptId: string) => {
     setConcepts(prev => {
       const currentIndex = prev.findIndex(c => c.id === currentConceptId);
-      if (currentIndex >= 0 && currentIndex < prev.length - 1) {
+      if (currentIndex >= 0 && currentIndex + 1 < prev.length) {
         const updated = [...prev];
-        updated[currentIndex + 1].unlocked = true;
-        return updated;
+        const nextConcept = updated[currentIndex + 1];
+        if (nextConcept) {
+          updated[currentIndex + 1] = { ...nextConcept, unlocked: true };
+          persistConcepts(updated);
+          return updated;
+        }
       }
       return prev;
     });
   };
 
   const completeGuidedPractice = (conceptId: string) => {
-    setConcepts(prev => prev.map(concept => 
-      concept.id === conceptId 
-        ? { ...concept, guidedPracticeCompleted: true }
-        : concept
-    ));
+    updateConcept(conceptId, { guidedPracticeCompleted: true });
   };
 
   const completeRigorousPractice = (conceptId: string) => {
-    setConcepts(prev => prev.map(concept => 
-      concept.id === conceptId 
-        ? { ...concept, rigorousPracticeCompleted: true }
-        : concept
-    ));
+    updateConcept(conceptId, { rigorousPracticeCompleted: true });
+  };
+
+  const markVideoWatched = (conceptId: string) => {
+    updateConcept(conceptId, { videoWatched: true });
+  };
+
+  // ---- Multi-profile ----
+  const switchProfile = async (profileId: string) => {
+    await profileService.setActiveProfileId(profileId);
+    resetGameState();
+    await loadForActiveProfile();
+  };
+
+  const addProfile = async (name: string, avatar: string = gurukulAvatars.boy) => {
+    const profile = await profileService.createProfile(name, avatar);
+    await switchProfile(profile.id);
+  };
+
+  const renameProfileFn = async (profileId: string, name: string) => {
+    await profileService.renameProfile(profileId, name);
+    setProfiles(await profileService.getProfiles());
+  };
+
+  const removeProfile = async (profileId: string) => {
+    await profileService.deleteProfile(profileId);
+    await loadForActiveProfile();
+  };
+
+  const resetActiveProfileProgress = async () => {
+    if (!activeProfileId) return;
+    await profileService.resetProfileProgress(activeProfileId);
+    resetGameState();
+    await loadForActiveProfile();
+  };
+
+  // ---- Session & calendar tracking ----
+  const startSession = (_conceptId: string, _mode: PracticeMode) => {
+    sessionStartRef.current = Date.now();
+  };
+
+  const endSession = async (conceptId: string, mode: PracticeMode, questionsAttempted: number, correctCount: number) => {
+    if (!activeProfileId || !sessionStartRef.current || questionsAttempted === 0) {
+      sessionStartRef.current = null;
+      return;
+    }
+    const startTime = sessionStartRef.current;
+    const endTime = Date.now();
+    sessionStartRef.current = null;
+
+    const durationMs = endTime - startTime;
+    const avgTimePerQuestion = durationMs / questionsAttempted;
+    const accuracy = (correctCount / questionsAttempted) * 100;
+
+    await db.insertPracticeSession({
+      sessionId: `session_${startTime}_${Math.random().toString(36).slice(2, 8)}`,
+      profileId: activeProfileId,
+      conceptId,
+      mode,
+      startTime,
+      endTime,
+      questionsAttempted,
+      correctCount,
+      avgTimePerQuestion,
+    });
+
+    const minutes = durationMs / 60000;
+    await db.upsertCalendarEntry(activeProfileId, todayKey(), minutes, conceptId, accuracy);
+
+    const todayEntry = await db.getCalendarEntry(activeProfileId, todayKey());
+    setTodayMinutes(todayEntry?.totalMinutes ?? 0);
+  };
+
+  const recordActivity = (conceptId: string, mode: LastActivity['mode'], questionIndex: number) => {
+    if (!activeProfileId) return;
+    const activity: LastActivity = { conceptId, mode, lastQuestionIndex: questionIndex, updatedAt: Date.now() };
+    setLastActivityState(activity);
+    profileService.setLastActivity(activeProfileId, activity);
+  };
+
+  const getCalendarEntries = async (startDate: string, endDate: string): Promise<CalendarEntry[]> => {
+    if (!activeProfileId) return [];
+    return db.getCalendarEntries(activeProfileId, startDate, endDate);
   };
 
   return (
@@ -202,6 +345,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userProgress,
         gameState,
         concepts,
+        profiles,
+        activeProfileId,
+        lastActivity,
+        isLoading,
+        todayMinutes,
         updateMastery,
         recordAnswer,
         adjustDifficulty,
@@ -211,6 +359,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unlockNextConcept,
         completeGuidedPractice,
         completeRigorousPractice,
+        markVideoWatched,
+        switchProfile,
+        addProfile,
+        renameProfile: renameProfileFn,
+        removeProfile,
+        resetActiveProfileProgress,
+        startSession,
+        endSession,
+        recordActivity,
+        getCalendarEntries,
       }}
     >
       {children}

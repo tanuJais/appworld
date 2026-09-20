@@ -1,19 +1,23 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Platform } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types';
 import { useGame } from '../context/GameContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import MasteryBar from '../components/MasteryBar';
+import AnimatedExample from '../components/AnimatedExample';
+import BaseMultiplicationLesson from '../components/baseMultiplication/BaseMultiplicationLesson';
+import { colors, gradients, radii, shadow, spacing } from '../theme/theme';
 
 type ConceptIntroScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'ConceptIntro'>;
+  navigation: StackNavigationProp<RootStackParamList, 'ConceptIntro'>;
   route: RouteProp<RootStackParamList, 'ConceptIntro'>;
 };
 
 const ConceptIntroScreen: React.FC<ConceptIntroScreenProps> = ({ navigation, route }) => {
   const { conceptId } = route.params;
-  const { concepts } = useGame();
+  const { concepts, markVideoWatched, recordActivity } = useGame();
   
   const concept = concepts.find(c => c.id === conceptId);
 
@@ -25,6 +29,44 @@ const ConceptIntroScreen: React.FC<ConceptIntroScreenProps> = ({ navigation, rou
     );
   }
 
+  if (concept.kind === 'introduction') {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+          <LinearGradient colors={gradients.header} style={styles.header}>
+            <Text style={styles.title}>🪔 {concept.name}</Text>
+            <Text style={styles.subtitle}>{concept.description}</Text>
+          </LinearGradient>
+          <View style={styles.content}>
+            <View style={styles.introCard}>
+              <Text style={styles.sectionTitle}>📚 Introduction</Text>
+              <Text style={styles.introText}>{concept.introduction}</Text>
+            </View>
+            {concept.introductionSections?.map((section) => (
+              <View key={section.title} style={styles.informationCard}>
+                <Text style={styles.informationTitle}>{section.title}</Text>
+                <Text style={styles.informationText}>{section.body}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (!concept.hasContent) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          <Text style={styles.title}>{concept.name}</Text>
+          <View style={styles.introCard}>
+            <Text style={styles.introText}>{concept.introduction}</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView 
@@ -33,10 +75,10 @@ const ConceptIntroScreen: React.FC<ConceptIntroScreenProps> = ({ navigation, rou
         showsVerticalScrollIndicator={true}
       >
         <LinearGradient
-        colors={['#4C1D95', '#5B21B6']}
+        colors={gradients.header}
         style={styles.header}
       >
-        <Text style={styles.title}>{concept.name}</Text>
+        <Text style={styles.title}>🪔 {concept.name}</Text>
         <Text style={styles.subtitle}>{concept.description}</Text>
       </LinearGradient>
 
@@ -46,38 +88,54 @@ const ConceptIntroScreen: React.FC<ConceptIntroScreenProps> = ({ navigation, rou
           <Text style={styles.introText}>{concept.introduction}</Text>
         </View>
 
+        <MasteryBar percentage={concept.confidenceScore} label="Confidence" />
+
+        <TouchableOpacity
+          style={concept.videoWatched ? styles.replayButton : styles.startButton}
+          onPress={() => {
+            markVideoWatched(conceptId);
+            recordActivity(conceptId, 'video', 0);
+          }}
+        >
+          <Text style={concept.videoWatched ? styles.replayButtonText : styles.startButtonText}>
+            {concept.videoWatched ? '✅ Video Watched' : '▶️ Mark Video as Watched'}
+          </Text>
+        </TouchableOpacity>
+
+        {conceptId === 'nikhilam-navatashcaramam-dashatah' && (
+          <>
+            <Text style={styles.sectionTitle}>✨ Watch it happen</Text>
+            <BaseMultiplicationLesson leftValue={98} rightValue={97} base={100} />
+          </>
+        )}
+
+        <TouchableOpacity
+          style={styles.replayButton}
+          onPress={() => navigation.navigate('BaseMultiplication', { leftValue: 98, rightValue: 97, base: 100 })}
+        >
+          <Text style={styles.replayButtonText}>🔎 Open the animation full screen</Text>
+        </TouchableOpacity>
+
         <Text style={styles.sectionTitle}>🎯 Examples</Text>
 
         {concept.examples.map((example, index) => (
-          <View key={index} style={styles.exampleCard}>
-            <View style={styles.exampleHeader}>
-              <Text style={styles.exampleNumber}>Example {index + 1}</Text>
-              <Text style={styles.problem}>{example.problem}</Text>
-            </View>
-
-            <View style={styles.stepsContainer}>
-              {example.steps.map((step, stepIndex) => (
-                <View key={stepIndex} style={styles.stepRow}>
-                  <View style={styles.stepNumber}>
-                    <Text style={styles.stepNumberText}>{stepIndex + 1}</Text>
-                  </View>
-                  <Text style={styles.stepText}>{step}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.solutionBox}>
-              <Text style={styles.solutionLabel}>Answer:</Text>
-              <Text style={styles.solution}>{example.solution}</Text>
-            </View>
-          </View>
+          <AnimatedExample
+            key={index}
+            index={index}
+            problem={example.problem}
+            steps={example.steps}
+            solution={example.solution}
+          />
         ))}
 
         <TouchableOpacity
           style={styles.startButton}
-          onPress={() => navigation.navigate('GuidedPractice', { conceptId })}
+          onPress={() => {
+            recordActivity(conceptId, 'guided', 0);
+            navigation.navigate('GuidedPractice', { conceptId });
+          }}
         >
-          <Text style={styles.startButtonText}>🚀 Start Guided Practice</Text>
+          <Text style={styles.startButtonText}>🔱 Start Guided Practice</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -95,10 +153,10 @@ const ConceptIntroScreen: React.FC<ConceptIntroScreenProps> = ({ navigation, rou
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     ...Platform.select({
       web: {
-        maxHeight: '100vh',
+        maxHeight: '100vh' as any,
       },
     }),
   },
@@ -109,137 +167,81 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    padding: 30,
-    paddingTop: 20,
+    padding: spacing.xxl,
+    paddingTop: spacing.xl,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.textInverse,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#E9D5FF',
+    color: colors.goldSurface,
   },
   content: {
-    padding: 20,
+    padding: spacing.xl,
     paddingBottom: 40,
   },
   introCard: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
     borderLeftWidth: 4,
-    borderLeftColor: '#4C1D95',
+    borderLeftColor: colors.gold,
+  },
+  informationCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadow.card,
+  },
+  informationTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: spacing.md,
+  },
+  informationText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    lineHeight: 25,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   introText: {
     fontSize: 16,
-    color: '#374151',
+    color: colors.textSecondary,
     lineHeight: 24,
   },
-  exampleCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  exampleHeader: {
-    marginBottom: 15,
-  },
-  exampleNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4C1D95',
-    marginBottom: 8,
-  },
-  problem: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    textAlign: 'center',
-  },
-  stepsContainer: {
-    marginVertical: 15,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#4C1D95',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  stepNumberText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-    paddingTop: 3,
-  },
-  solutionBox: {
-    backgroundColor: '#D1FAE5',
-    padding: 15,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  solutionLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#065F46',
-    marginRight: 10,
-  },
-  solution: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#059669',
-  },
   startButton: {
-    backgroundColor: '#4C1D95',
+    backgroundColor: colors.primary,
     padding: 18,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
     marginTop: 10,
   },
   startButtonText: {
-    color: '#fff',
+    color: colors.textInverse,
     fontSize: 18,
     fontWeight: 'bold',
   },
   replayButton: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.surfaceMuted,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
     marginTop: 10,
   },
   replayButtonText: {
-    color: '#374151',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '600',
   },

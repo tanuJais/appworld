@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Question } from '../types';
+import { colors, radii, shadow, spacing } from '../theme/theme';
 
 type QuestionCardProps = {
   question: Question;
@@ -53,7 +54,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         onChangeText={setUserAnswer}
         placeholder="Enter your answer"
         keyboardType="numeric"
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.textMuted}
       />
 
       {showHint && question.hint && (
@@ -82,98 +83,98 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginVertical: spacing.md,
+    ...shadow.card,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: spacing.lg,
   },
   questionNumber: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   difficultyBadge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: radii.md,
   },
   difficulty_easy: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: colors.easySurface,
   },
   difficulty_medium: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.mediumSurface,
   },
   difficulty_hard: {
-    backgroundColor: '#FED7AA',
+    backgroundColor: colors.hardSurface,
   },
   difficulty_expert: {
-    backgroundColor: '#FECACA',
+    backgroundColor: colors.expertSurface,
   },
   difficultyText: {
     fontSize: 10,
     fontWeight: 'bold',
+    color: colors.textPrimary,
   },
   questionContainer: {
-    backgroundColor: '#F3F4F6',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 20,
+    backgroundColor: colors.surfaceMuted,
+    padding: spacing.xl,
+    borderRadius: radii.md,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   questionText: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   input: {
     borderWidth: 2,
-    borderColor: '#4C1D95',
-    borderRadius: 12,
+    borderColor: colors.primary,
+    borderRadius: radii.md,
     padding: 15,
     fontSize: 18,
-    marginBottom: 15,
-    backgroundColor: '#fff',
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surface,
+    color: colors.textPrimary,
   },
   hintButton: {
     alignSelf: 'center',
     marginBottom: 10,
   },
   hintButtonText: {
-    color: '#4C1D95',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },
   hintContainer: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.surfaceAlt,
     padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
+    borderRadius: radii.md,
+    marginBottom: spacing.lg,
     borderLeftWidth: 4,
-    borderLeftColor: '#4C1D95',
+    borderLeftColor: colors.gold,
   },
   hintText: {
-    color: '#4C1D95',
+    color: colors.primary,
     fontSize: 14,
   },
   submitButton: {
-    backgroundColor: '#4C1D95',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    padding: spacing.lg,
+    borderRadius: radii.md,
     alignItems: 'center',
   },
   submitButtonText: {
-    color: '#fff',
+    color: colors.textInverse,
     fontSize: 18,
     fontWeight: 'bold',
   },

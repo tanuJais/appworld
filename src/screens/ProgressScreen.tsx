@@ -1,18 +1,20 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types';
 import { useGame } from '../context/GameContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { colors, gradients, radii, shadow, spacing } from '../theme/theme';
 
 type ProgressScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Progress'>;
+  navigation: StackNavigationProp<RootStackParamList, 'Progress'>;
 };
 
 const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
   const { userProgress, concepts } = useGame();
+  const lessons = concepts.filter(concept => concept.kind === 'lesson');
 
-  const completedConcepts = concepts.filter(c => c.masteryPercentage >= 100).length;
+  const completedConcepts = lessons.filter(c => c.masteryPercentage >= 100).length;
   const totalAccuracy = Object.values(userProgress.concepts).reduce(
     (sum, concept) => sum + concept.accuracy, 0
   ) / Math.max(Object.keys(userProgress.concepts).length, 1);
@@ -25,10 +27,10 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
         showsVerticalScrollIndicator={true}
       >
       <LinearGradient
-        colors={['#4C1D95', '#5B21B6', '#6D28D9']}
+        colors={gradients.header}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Your Progress</Text>
+        <Text style={styles.headerTitle}>🏆 Your Progress</Text>
         
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
@@ -44,13 +46,17 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
             <Text style={styles.statLabel}>Streak</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{completedConcepts}/{concepts.length}</Text>
+            <Text style={styles.statValue}>{completedConcepts}/{lessons.length}</Text>
             <Text style={styles.statLabel}>Concepts</Text>
           </View>
         </View>
       </LinearGradient>
 
       <View style={styles.content}>
+        <TouchableOpacity style={styles.calendarLink} onPress={() => navigation.navigate('Calendar')}>
+          <Text style={styles.calendarLinkText}>📅 View Practice Calendar ›</Text>
+        </TouchableOpacity>
+
         <View style={styles.accuracyCard}>
           <Text style={styles.accuracyTitle}>Overall Accuracy</Text>
           <Text style={styles.accuracyValue}>{totalAccuracy.toFixed(1)}%</Text>
@@ -61,7 +67,7 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
 
         <Text style={styles.sectionTitle}>Concept Progress</Text>
 
-        {concepts.map((concept) => {
+        {lessons.map((concept) => {
           const progress = userProgress.concepts[concept.id];
           
           return (
@@ -83,8 +89,8 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
                 <LinearGradient
                   colors={
                     concept.masteryPercentage >= 100
-                      ? ['#10B981', '#059669']
-                      : ['#4C1D95', '#6D28D9']
+                      ? gradients.success
+                      : [colors.primary, colors.primaryLight]
                   }
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -110,6 +116,11 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
               )}
 
               <View style={styles.badges}>
+                {concept.videoWatched && (
+                  <View style={styles.badge}>
+                    <Text>▶️ Video</Text>
+                  </View>
+                )}
                 {concept.guidedPracticeCompleted && (
                   <View style={styles.badge}>
                     <Text>✓ Guided</Text>
@@ -120,6 +131,13 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
                     <Text>✓ Rigorous</Text>
                   </View>
                 )}
+              </View>
+
+              <View style={styles.progressRow}>
+                <Text style={styles.progressLabel}>Confidence</Text>
+                <Text style={styles.progressValue}>
+                  {concept.confidenceScore.toFixed(0)}%
+                </Text>
               </View>
 
               <TouchableOpacity
@@ -133,10 +151,9 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
                     navigation.navigate('MasteryLevel', { conceptId: concept.id });
                   }
                 }}
-                disabled={!concept.unlocked}
               >
                 <Text style={styles.practiceButtonText}>
-                  {!concept.unlocked ? '🔒 Locked' : 'Continue Practice →'}
+                  Continue Practice →
                 </Text>
               </TouchableOpacity>
             </View>
@@ -161,10 +178,10 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     ...Platform.select({
       web: {
-        maxHeight: '100vh',
+        maxHeight: '100vh' as any,
       },
     }),
   },
@@ -175,13 +192,13 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    padding: 30,
-    paddingTop: 20,
+    padding: spacing.xxl,
+    paddingTop: spacing.xl,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.textInverse,
     marginBottom: 20,
   },
   statsGrid: {
@@ -190,77 +207,84 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   statCard: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.14)',
     padding: 15,
-    borderRadius: 12,
+    borderRadius: radii.md,
     flex: 1,
     minWidth: '45%',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
   },
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.textInverse,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#E9D5FF',
+    color: colors.goldSurface,
   },
   content: {
-    padding: 20,
+    padding: spacing.xl,
+  },
+  calendarLink: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    padding: 14,
+    marginBottom: 16,
+    alignItems: 'center',
+    ...shadow.card,
+  },
+  calendarLinkText: {
+    color: colors.primary,
+    fontWeight: 'bold',
+    fontSize: 15,
   },
   accuracyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
     marginBottom: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...shadow.card,
   },
   accuracyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   accuracyValue: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#4C1D95',
+    color: colors.primary,
     marginBottom: 15,
   },
   accuracyBar: {
     width: '100%',
     height: 12,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 6,
     overflow: 'hidden',
   },
   accuracyFill: {
     height: '100%',
-    backgroundColor: '#4C1D95',
+    backgroundColor: colors.primary,
   },
   sectionTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textPrimary,
     marginBottom: 15,
   },
   conceptCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...shadow.card,
   },
   conceptHeader: {
     flexDirection: 'row',
@@ -271,13 +295,13 @@ const styles = StyleSheet.create({
   conceptName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textPrimary,
     flex: 1,
   },
   masteredBadge: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#059669',
+    color: colors.success,
   },
   progressRow: {
     flexDirection: 'row',
@@ -286,16 +310,16 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   progressValue: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#4C1D95',
+    color: colors.primary,
   },
   progressBar: {
     height: 10,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 5,
     overflow: 'hidden',
     marginBottom: 15,
@@ -308,8 +332,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginBottom: 15,
     paddingVertical: 10,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    backgroundColor: colors.background,
+    borderRadius: radii.md,
   },
   detailItem: {
     alignItems: 'center',
@@ -317,12 +341,12 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   detailLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   badges: {
     flexDirection: 'row',
@@ -330,37 +354,37 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   badge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: colors.successSurface,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: radii.md,
   },
   practiceButton: {
-    backgroundColor: '#4C1D95',
+    backgroundColor: colors.primary,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     alignItems: 'center',
   },
   practiceButtonText: {
-    color: '#fff',
+    color: colors.textInverse,
     fontSize: 14,
     fontWeight: '600',
   },
   tipBox: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.surfaceAlt,
     padding: 15,
-    borderRadius: 12,
+    borderRadius: radii.md,
     marginTop: 10,
   },
   tipTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4C1D95',
+    color: colors.primary,
     marginBottom: 8,
   },
   tipText: {
     fontSize: 14,
-    color: '#5B21B6',
+    color: colors.primary,
     lineHeight: 20,
   },
 });
