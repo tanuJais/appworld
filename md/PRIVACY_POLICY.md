@@ -22,4 +22,4 @@ If the app adds account, analytics, advertising, cloud-sync, or other data-colle
 
 ## Contact
 
-Before publishing, replace this section with a monitored support email address or support web page. The same public URL must be entered as the App Store Connect Privacy Policy URL.
+For questions about this policy, contact tanuja.jaiswal@gmail.com.

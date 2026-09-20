@@ -4,7 +4,7 @@
 
 The iOS bundle identifier is `com.vedicmaths.mastery`. The app is configured for iPhone only, requires no special device permissions, and declares no non-exempt encryption. EAS increments the iOS build number for each production build.
 
-Before submitting, replace the contact placeholder in `PRIVACY_POLICY.md`, publish that file to a public HTTPS URL, and use it for both the App Store Connect Privacy Policy URL and the support contact page. Do not submit with a placeholder contact method.
+The privacy policy is hosted at `https://tanujais.github.io/appworld/privacy-policy.html` (GitHub Pages, served from `docs/` on `master`). Use that URL for both the App Store Connect Privacy Policy URL and Support URL fields.
 
 ## App Store Connect metadata
 
