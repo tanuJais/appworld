@@ -73,14 +73,9 @@ const generateSquareQuestion = (n: number, difficulty: string): Question => {
 
 // Generate fresh questions dynamically
 export const generateDynamicQuestions = (conceptId: string, count: number, difficulty?: string): Question[] => {
-  if (conceptId === 'intro-mental-math') {
-    return generateIntroQuestions(count, difficulty);
-  }
-  if (conceptId === 'nikhilam-multiplication') {
-    return generateNikhilamQuestions(count, difficulty);
-  }
-  if (conceptId === 'urdhva-tiryak') {
-    return generateUrdhvaQuestions(count, difficulty);
+  const generator = dynamicQuestionGenerators[conceptId];
+  if (generator) {
+    return generator(count, difficulty);
   }
   if (conceptId !== 'ekadhikena-purvena') {
     return generateGeneralQuestions(conceptId, count, difficulty);
@@ -201,7 +196,7 @@ const generateNikhilamQuestions = (count: number, difficulty?: string): Question
 
     questions.push({
       id: uniqueId(),
-      conceptId: 'nikhilam-multiplication',
+      conceptId: 'nikhilam-navatashcaramam-dashatah',
       question: `${a} × ${b}`,
       answer: a * b,
       difficulty: questionDifficulty,
@@ -224,7 +219,7 @@ const generateUrdhvaQuestions = (count: number, difficulty?: string): Question[]
 
     questions.push({
       id: uniqueId(),
-      conceptId: 'urdhva-tiryak',
+      conceptId: 'urdhva-tiryagbhyam',
       question: `${a} × ${b}`,
       answer: a * b,
       difficulty: questionDifficulty,
@@ -270,4 +265,339 @@ const generateGeneralQuestions = (conceptId: string, count: number, difficulty?:
     });
   }
   return questions;
+};
+
+/** Generic integer magnitude scale used by the algebra-style generators below. */
+const magnitudeRanges: Record<'easy' | 'medium' | 'hard' | 'expert', [number, number]> = {
+  easy: [2, 12],
+  medium: [10, 40],
+  hard: [30, 100],
+  expert: [80, 300],
+};
+
+/** Small integer roots/constants used by the quadratic-factoring generators. */
+const rootRanges: Record<'easy' | 'medium' | 'hard' | 'expert', [number, number]> = {
+  easy: [1, 5],
+  medium: [2, 8],
+  hard: [4, 12],
+  expert: [8, 20],
+};
+
+/** Level: Paravartya Yojayet — division by a divisor just below a base (10/100/1000). */
+const generateParavartyaQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const base = questionDifficulty === 'easy' || questionDifficulty === 'medium' ? 100 : 1000;
+    const maxDeviation = questionDifficulty === 'easy' ? 3 : questionDifficulty === 'medium' ? 6 : questionDifficulty === 'hard' ? 12 : 25;
+    const deviation = randomInt(1, maxDeviation);
+    const divisor = base - deviation;
+    const maxQuotient = questionDifficulty === 'easy' ? 9 : questionDifficulty === 'medium' ? 20 : questionDifficulty === 'hard' ? 40 : 80;
+    const quotient = randomInt(2, maxQuotient);
+    const dividend = divisor * quotient;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'paravartya-yojayet',
+      question: `${dividend} ÷ ${divisor}`,
+      answer: quotient,
+      difficulty: questionDifficulty,
+      hint: `Divisor is ${deviation} below ${base}. Transpose the complement ${deviation} and carry it into the quotient as you divide.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Shunyam Saamyasamuccaye — x + a = b - x, solved by combining equal sums. */
+const generateShunyamQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = magnitudeRanges[questionDifficulty];
+    const x = randomInt(min, max);
+    const a = randomInt(min, max);
+    const b = 2 * x + a;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'shunyam-saamyasamuccaye',
+      question: `x + ${a} = ${b} - x`,
+      answer: x,
+      difficulty: questionDifficulty,
+      hint: `Add x to both sides to get 2x + ${a} = ${b}, then isolate x.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Anurupye Shunyamanyat — cx + a = dx + b, solved with the ratio-based zero method. */
+const generateAnurupyeQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = magnitudeRanges[questionDifficulty];
+    const x = randomInt(min, max);
+    const c = randomInt(2, 4);
+    const d = c + randomInt(1, 3);
+    const b = randomInt(min, max);
+    const a = b + (d - c) * x;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'anurupye-shunyamanyat',
+      question: `${c}x + ${a} = ${d}x + ${b}`,
+      answer: x,
+      difficulty: questionDifficulty,
+      hint: `Move the x terms together: ${d - c}x = ${a - b}, then divide to find x.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Sankalana-Vyavakalanabhyam — add/subtract simultaneous equations to isolate x. */
+const generateSankalanaQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = magnitudeRanges[questionDifficulty];
+    const x = randomInt(min + 1, max);
+    const y = randomInt(min, x - 1);
+    const sum = x + y;
+    const diff = x - y;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'sankalana-vyavakalanabhyam',
+      question: `x + y = ${sum}, x - y = ${diff}. Find x.`,
+      answer: x,
+      difficulty: questionDifficulty,
+      hint: 'Add the two equations to eliminate y, then divide by 2.',
+    });
+  }
+  return questions;
+};
+
+/** Level: Puranapuranabhyam — complete to a round number, then rebalance the rest. */
+const generatePuranapuranabhyamQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const roundStep = questionDifficulty === 'hard' || questionDifficulty === 'expert' ? 100 : 10;
+    const multiplierMax = questionDifficulty === 'easy' ? 5 : questionDifficulty === 'medium' ? 9 : questionDifficulty === 'hard' ? 20 : 90;
+    const roundBase = randomInt(1, multiplierMax) * roundStep + roundStep;
+    const deficiency = randomInt(1, 4);
+    const a = roundBase - deficiency;
+    const addend = randomInt(10, 90);
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'puranapuranabhyam',
+      question: `${a} + ${addend}`,
+      answer: a + addend,
+      difficulty: questionDifficulty,
+      hint: `${a} is ${deficiency} short of ${roundBase}; borrow ${deficiency} from ${addend}, then add to the round number.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Chalana-Kalanabhyam — factor a quadratic; the answer is its smaller root. */
+const generateChalanaKalanabhyamQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = rootRanges[questionDifficulty];
+    const r1 = randomInt(min, max);
+    const r2 = randomInt(r1 + 1, max + 2);
+    const sum = r1 + r2;
+    const product = r1 * r2;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'chalana-kalanabhyam',
+      question: `x² - ${sum}x + ${product} = 0 (smaller root)`,
+      answer: r1,
+      difficulty: questionDifficulty,
+      hint: `Find two numbers that multiply to ${product} and add to ${sum}.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Yaavadunam — square a number close to a base by working with its deficiency. */
+const generateYaavadunamQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const base = questionDifficulty === 'easy' ? 10 : questionDifficulty === 'medium' || questionDifficulty === 'hard' ? 100 : 1000;
+    const maxDeficiency = questionDifficulty === 'easy' ? 2 : questionDifficulty === 'medium' ? 5 : questionDifficulty === 'hard' ? 20 : 50;
+    const deficiency = randomInt(1, maxDeficiency);
+    const n = base - deficiency;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'yaavadunam',
+      question: `${n}²`,
+      answer: n * n,
+      difficulty: questionDifficulty,
+      hint: `Deficiency from ${base} is ${deficiency}. Subtract it again (${n} - ${deficiency}) then append the square of ${deficiency}.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Vyashtisamanstih — expand (x + a)(x + b) = product and find the positive root. */
+const generateVyashtisamanstihQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = rootRanges[questionDifficulty];
+    const x = randomInt(min, max);
+    const a = randomInt(1, 5);
+    const b = randomInt(1, 5);
+    const product = (x + a) * (x + b);
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'vyashtisamanstih',
+      question: `(x + ${a})(x + ${b}) = ${product} (positive root)`,
+      answer: x,
+      difficulty: questionDifficulty,
+      hint: 'Expand into a quadratic, factor it, and keep the positive root.',
+    });
+  }
+  return questions;
+};
+
+/** Level: Shesanyankena Charamena — long-division remainders behind recurring decimals. */
+const generateShesanyankenaQuestions = (count: number, difficulty?: string): Question[] => {
+  const divisorsByDifficulty: Record<'easy' | 'medium' | 'hard' | 'expert', number[]> = {
+    easy: [3, 6, 7, 9],
+    medium: [11, 13, 17],
+    hard: [19, 23, 29],
+    expert: [31, 37, 41],
+  };
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const divisors = divisorsByDifficulty[questionDifficulty];
+    const divisor = divisors[randomInt(0, divisors.length - 1)];
+    const power = questionDifficulty === 'easy' ? 1 : questionDifficulty === 'medium' ? 2 : questionDifficulty === 'hard' ? 3 : 4;
+    const numerator = Math.pow(10, power);
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'shesanyankena-charamena',
+      question: `Remainder of ${numerator} ÷ ${divisor}`,
+      answer: numerator % divisor,
+      difficulty: questionDifficulty,
+      hint: 'This is one step of long division; the remainder feeds into the next digit of the recurring decimal.',
+    });
+  }
+  return questions;
+};
+
+/** Level: Sopantyadvayamantyam — factor a quadratic whose two roots are both negative. */
+const generateSopantyadvayamantyamQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = rootRanges[questionDifficulty];
+    const p = randomInt(min, max);
+    const q = randomInt(p + 1, max + 2);
+    const sum = p + q;
+    const product = p * q;
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'sopantyadvayamantyam',
+      question: `x² + ${sum}x + ${product} = 0 (root closer to zero)`,
+      answer: -p,
+      difficulty: questionDifficulty,
+      hint: `Two numbers that multiply to ${product} and add to ${sum} are ${p} and ${q}; the roots are their negatives.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Ekanyunena Purvena — multiply by 9, 99, 999, or 9999. */
+const generateEkanyunenaQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const nines = questionDifficulty === 'easy' ? 9 : questionDifficulty === 'medium' ? 99 : questionDifficulty === 'hard' ? 999 : 9999;
+    const multiplicand = randomInt(2, nines - 1);
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'ekanyunena-purvena',
+      question: `${multiplicand} × ${nines}`,
+      answer: multiplicand * nines,
+      difficulty: questionDifficulty,
+      hint: `Subtract 1: ${multiplicand - 1}. Complement it from ${nines}: ${nines - (multiplicand - 1)}. Combine the two parts.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Gunitasamuccayah — verify (x + a)(x + b) by evaluating both sides at x = 1. */
+const generateGunitasamuccayahQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = rootRanges[questionDifficulty];
+    const a = randomInt(min, max);
+    const b = randomInt(min, max);
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'gunitasamuccayah',
+      question: `(x + ${a})(x + ${b}) at x = 1`,
+      answer: (1 + a) * (1 + b),
+      difficulty: questionDifficulty,
+      hint: `Substitute x = 1 into both sides: LHS = ${1 + a} × ${1 + b}.`,
+    });
+  }
+  return questions;
+};
+
+/** Level: Gunakasamuccayah — the coefficient of x equals the sum of the factor constants. */
+const generateGunakasamuccayahQuestions = (count: number, difficulty?: string): Question[] => {
+  const questions: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const questionDifficulty = pickDifficulty(difficulty);
+    const [min, max] = rootRanges[questionDifficulty];
+    const a = randomInt(min, max);
+    const b = randomInt(min, max);
+
+    questions.push({
+      id: uniqueId(),
+      conceptId: 'gunakasamuccayah',
+      question: `Expand (x + ${a})(x + ${b}). What is the coefficient of x?`,
+      answer: a + b,
+      difficulty: questionDifficulty,
+      hint: 'The coefficient of x equals the sum of the two constants being multiplied.',
+    });
+  }
+  return questions;
+};
+
+/** Maps each catalog lesson id (see src/data/concepts.ts) to its matching question generator. */
+const dynamicQuestionGenerators: Record<string, (count: number, difficulty?: string) => Question[]> = {
+  'intro-mental-math': generateIntroQuestions,
+  'nikhilam-navatashcaramam-dashatah': generateNikhilamQuestions,
+  'urdhva-tiryagbhyam': generateUrdhvaQuestions,
+  'paravartya-yojayet': generateParavartyaQuestions,
+  'shunyam-saamyasamuccaye': generateShunyamQuestions,
+  'anurupye-shunyamanyat': generateAnurupyeQuestions,
+  'sankalana-vyavakalanabhyam': generateSankalanaQuestions,
+  'puranapuranabhyam': generatePuranapuranabhyamQuestions,
+  'chalana-kalanabhyam': generateChalanaKalanabhyamQuestions,
+  'yaavadunam': generateYaavadunamQuestions,
+  'vyashtisamanstih': generateVyashtisamanstihQuestions,
+  'shesanyankena-charamena': generateShesanyankenaQuestions,
+  'sopantyadvayamantyam': generateSopantyadvayamantyamQuestions,
+  'ekanyunena-purvena': generateEkanyunenaQuestions,
+  'gunitasamuccayah': generateGunitasamuccayahQuestions,
+  'gunakasamuccayah': generateGunakasamuccayahQuestions,
 };
